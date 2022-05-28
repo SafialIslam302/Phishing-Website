@@ -1,144 +1,64 @@
-import sys
-import numpy as np
-import pandas as pd
-import seaborn as sns
+import math
+import tensorflow as tf
+from sklearn import tree
+from statistics import mean
 from sklearn import metrics
-import matplotlib.pyplot as plt
-from sklearn.svm import LinearSVC
-from sklearn.decomposition import PCA
-from sklearn.model_selection import KFold 
-from sklearn.metrics import confusion_matrix
-from sklearn.preprocessing import LabelEncoder
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 
-from sklearn.model_selection import RepeatedKFold
-from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from sklearn.metrics import f1_score,average_precision_score,recall_score,roc_auc_score
-from sklearn.preprocessing import RobustScaler,StandardScaler,LabelEncoder,MinMaxScaler
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
-from sklearn.model_selection import train_test_split, cross_val_score,KFold,StratifiedKFold, GridSearchCV
 
-
-
-import warnings
-warnings.filterwarnings("ignore")
-import math
-from sklearn import tree
-from sklearn import metrics
-from sklearn.metrics import accuracy_score
-from sklearn.tree import DecisionTreeClassifier
-from statistics import mean
-from sklearn.svm import SVC
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score
+from numpy.random import random
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+import sys
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split, cross_val_score,KFold,StratifiedKFold, GridSearchCV
+from sklearn.metrics import confusion_matrix,accuracy_score,f1_score,average_precision_score,recall_score,roc_auc_score
+from sklearn.preprocessing import RobustScaler,StandardScaler,LabelEncoder,MinMaxScaler
+from sklearn.model_selection import KFold 
+from sklearn.model_selection import RepeatedKFold
+
+from sklearn.svm import SVC
+from keras.models import Sequential
+from sklearn.metrics import plot_roc_curve
+from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
-raw_data = pd.read_csv('Phishing.csv')
-lb_enc = LabelEncoder()
-raw_data["NEW_RESULT"] = lb_enc.fit_transform(raw_data["Result"])
-raw_data[["Result", "NEW_RESULT"]]
-df = raw_data.drop(['Result'], axis = 1)
-df.head(10)
-coloum = df.shape[1] - 1
-data_X = df.drop(['NEW_RESULT'], axis=1)
-data_y = pd.DataFrame(df['NEW_RESULT'])
-y = data_y.loc[:,:].values
-X = data_X.iloc[:,:].values
+
+from sklearn.feature_selection import SelectKBest,chi2
+from sklearn.model_selection import train_test_split
+
+from keras.layers import Activation,BatchNormalization
+from keras.layers.core import Dense,Dropout
+from sklearn.metrics import plot_roc_curve
+from keras.metrics import categorical_crossentropy
+from keras.callbacks import ReduceLROnPlateau,EarlyStopping
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+
+
+
+
+Data = pd.read_csv("PhishingData.csv",header="infer")
+
+
+x=Data.iloc [:,1:-1]
+x=x.values
+y=Data.iloc[:,-1].values
+dimension = Data.shape[1] - 1
+print(dimension)
+
+
+
 np.set_printoptions(threshold=sys.maxsize)
-#print(y)
-y = np.where(y >= 1, 1, 0)
-#print(y)
-import random
-import pyswarms as ps
-
-%load_ext autoreload
-%autoreload 2
-%matplotlib inline
-  
-RANDOM_SEED = 42
-random.seed(RANDOM_SEED)
-np.random.seed(RANDOM_SEED)
-from sklearn import linear_model
-
-# Create an instance of the classifier
-classifier = linear_model.LogisticRegression()
-
-# Define objective function
-def f_per_particle(m, alpha):
-    """Computes for the objective function per particle
-
-    Inputs
-    ------
-    m : numpy.ndarray
-        Binary mask that can be obtained from BinaryPSO, will
-        be used to mask features.
-    alpha: float (default is 0.5)
-        Constant weight for trading-off classifier performance
-        and number of features
-
-    Returns
-    -------
-    numpy.ndarray
-        Computed objective function
-    """
-    total_features = coloum
-    # Get the subset of the features from the binary mask
-    if np.count_nonzero(m) == 0:
-        X_subset = X
-    else:
-        X_subset = X[:,m==1]
-    # Perform classification and store performance in P
-    classifier.fit(X_subset, y)
-    P = (classifier.predict(X_subset) == y).mean()
-    # Compute for the objective function
-    j = (alpha * (1.0 - P)
-        + (1.0 - alpha) * (1 - (X_subset.shape[1] / total_features)))
-
-    return j
-def f(x, alpha=0.88):
-    """Higher-level method to do classification in the
-    whole swarm.
-
-    Inputs
-    ------
-    x: numpy.ndarray of shape (n_particles, dimensions)
-        The swarm that will perform the search
-
-    Returns
-    -------
-    numpy.ndarray of shape (n_particles, )
-        The computed loss for each particle
-    """
-    n_particles = x.shape[0]
-    j = [f_per_particle(x[i], alpha) for i in range(n_particles)]
-    return np.array(j)
-%%time
-# Initialize swarm, arbitrary
-options = {'c1': 0.6, 'c2': 0.4, 'w':0.8, 'k': 30, 'p':2}
-
-# Call instance of PSO
-dimensions = coloum # dimensions should be the number of features
-optimizer = ps.discrete.BinaryPSO(n_particles=50, dimensions=dimensions, options=options)
-
-# Perform optimization
-cost, pos = optimizer.optimize(f, iters=200)
-
-# Create two instances of LogisticRegression
-classfier = linear_model.LogisticRegression()
-
-# Get the selected features from the final positions
-X_selected_features = X[:,pos==1]  # subset
-
-# Perform classification and store performance in P
-classifier.fit(X_selected_features, y)
-
-# Compute performance
-subset_performance = (classifier.predict(X_selected_features) == y).mean()
+y = np.where(y >= 0, 1, -1)
 
 
-print('Subset performance: %.3f' % (subset_performance))
 
 def evaluation(clf, X, Y):
     print(f'Accuracy')
@@ -167,11 +87,7 @@ def evaluation(clf, X, Y):
     print("Standard Error: ", rec.std())
     
     
-X_train, X_test, y_train, y_test = train_test_split(X_selected_features, y, test_size=0.2, random_state=0, stratify=y)
-print (X_train.shape)
-print (X_test.shape)
-print (y_train.shape)
-print (y_test.shape)
+X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state=101)
 
 def hyperParameterTuning_DecisionTree(features, labels):
     params = {
@@ -190,18 +106,12 @@ def hyperParameterTuning_DecisionTree(features, labels):
     gsearch.fit(features,labels)
     
     return gsearch.best_params_
-
+  
+  
 hyperParameterTuning_DecisionTree(X_train, y_train)
-clf_tree = DecisionTreeClassifier(criterion = 'entropy', max_depth = 30, max_features = 'auto',
-                                      min_samples_leaf = 4, min_samples_split = 8, random_state = 30)
+
+clf_tree = DecisionTreeClassifier(criterion='gini', max_depth=20, max_features='log2',
+                                      min_samples_leaf = 5, min_samples_split = 12, random_state = 10 )
+
 evaluation(clf_tree, X_test, y_test)
-
-
-
-
-
-
-
-
-
 
